@@ -1,36 +1,36 @@
-const createError = require('http-errors');
-const express = require('express');
-const path = require('path');
-const cookieParser = require('cookie-parser');
-const logger = require('morgan');
-const fs = require('fs')
-const indexRouter = require('./routes/index');
-const cors = require('cors')
+import express, { Request, Response } from 'express';
+import cookieParser from 'cookie-parser';
+import logger from 'morgan';
+import fs from 'fs';
+import cors from 'cors';
+import indexRouter from './routes/index';
 
 const app = express();
 
-app.use(cors())
+app.use(cors());
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-app.use('/uploads', express.static('uploads'))
+app.use('/uploads', express.static('uploads'));
 
 app.use('/api', indexRouter);
 
-if (!fs.existsSync('uploads')){
-  fs.mkdirSync('uploads')
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads');
 }
 
-app.use(function(req, res, next) {
+// 404 handler
+app.use(function(req: Request, res: Response) {
   res.status(404).json({ 
     error: 'Not Found',
     message: `Ресурс ${req.method} ${req.originalUrl} не найден`
   });
 });
 
-app.use(function(err, req, res, next) {
+// Error handler
+app.use(function(err: Error & { status?: number }, req: Request, res: Response) {
   console.error('Error:', err.message);
   
   res.status(err.status || 500).json({
@@ -42,4 +42,5 @@ app.use(function(err, req, res, next) {
   });
 });
 
-module.exports = app;
+export default app;
+

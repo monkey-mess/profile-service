@@ -1,20 +1,21 @@
-const express = require('express');
-const router = express.Router();
-const multer = require('multer');
-const { ProfileController } = require('../controllers');
-const authenticateToken = require('../middleware/auth');
+import express from 'express';
+import multer from 'multer';
+import { ProfileController } from '../controllers';
+import authenticateToken from '../middleware/auth';
 
-const uploadDestination = 'uploads'
+const router = express.Router();
+
+const uploadDestination = 'uploads';
 
 // Показываем где хранить файлы
 const storage = multer.diskStorage({
-    destination: uploadDestination,
-    filename: function(req, file, next){
-        next(null, file.originalname)
-    }
-})
+  destination: uploadDestination,
+  filename: function(_req, file, next) {
+    next(null, file.originalname);
+  }
+});
 
-const uploads = multer({ storage: storage })
+const uploads = multer({ storage: storage });
 
 // Профильные пути
 router.get('/profiles/:userId', ProfileController.getProfile);
@@ -24,4 +25,5 @@ router.get('/profiles/search', ProfileController.searchProfiles);
 router.post('/profiles/:userId/avatar', authenticateToken, uploads.single('avatar'), ProfileController.updateAvatar);
 router.post('/profiles/batch', ProfileController.getProfilesBatch);
 
-module.exports = router;
+export default router;
+
