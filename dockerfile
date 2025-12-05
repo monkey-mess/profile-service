@@ -19,6 +19,9 @@ RUN npx prisma generate
 # Копируем оставшееся приложение
 COPY . .
 
+# Компилируем TypeScript
+RUN npm run build
+
 # Открыть порт в контейнере
 EXPOSE 3000
 
