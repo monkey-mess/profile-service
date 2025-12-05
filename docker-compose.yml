@@ -7,21 +7,21 @@ services:
     depends_on:
       - postgres
     environment:
-      - DATABASE_URL=postgresql://postgresUser:password@postgres:5432/AInutritionists?schema=public 
+      - DATABASE_URL=${DATABASE_URL}
 
   postgres:
     image: postgres:16.1
     restart: always
     environment:
-      POSTGRES_USER: postgresUser
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: AInutritionists
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME} 
     volumes:
       - postgres:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgresUser -d AInutritionists"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 10
