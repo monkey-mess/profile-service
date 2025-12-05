@@ -261,8 +261,115 @@ const ProfileController = {
       console.error('Batch get profiles error', error);
       res.status(500).json({ error: 'Internal server error' });
     }
-  }
+  },
+
+  // GET /profiles/me - Получить свой профиль
+  getMe: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        res.status(401).json({ error: 'Не авторизован' });
+        return;
+      }
+
+      const profile = await prisma.profile.findUnique({
+        where: { id: userId }
+      });
+
+      if (!profile) {
+        res.status(404).json({ error: 'Профиль не найден' });
+        return;
+      }
+
+      res.json(profile);
+
+    } catch (error) {
+      console.error('Get Current Profile Error', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  },
+
+  // PATCH /profiles/me - Обновить свой профиль
+  updateMe: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        res.status(401).json({ error: 'Не авторизован' });
+        return;
+      }
+
+      const { username, firstName, lastName, description } = req.body;
+
+      const existingProfile = await prisma.profile.findUnique({
+        where: { id: userId }
+      });
+
+      if (!existingProfile) {
+        res.status(404).json({ error: 'Профиль не найден' });
+        return;
+      }
+
+      if (username) {
+        const profileWithSameUsername = await prisma.profile.findFirst({ 
+          where: { username } 
+        });
+
+        if (profileWithSameUsername && profileWithSameUsername.id !== userId) {
+          res.status(400).json({ error: 'Имя пользователя уже занято' });
+          return;
+        }
+      }
+
+      const updatedProfile = await prisma.profile.update({
+        where: { id: userId },
+        data: {
+          username: username || undefined,
+          firstName: firstName || undefined,
+          lastName: lastName || undefined,
+          description: description || undefined,
+        }
+      });
+
+      res.json(updatedProfile);
+    } catch (error) {
+      console.error('Update Profile Error', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  },
+
+  // PATCH /profiles/me/avatar - Обновить аватар текущего пользователя
+  updateMyAvatar: async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      res.status(401).json({ error: 'Не авторизован' });
+      return;
+    }
+
+    if (!req.file) {
+      res.status(400).json({ error: 'Файл не загружен' });
+      return;
+    }
+
+    ensureUploadsDir();
+    let filePath: string = req.file.path;
+    filePath = filePath.replace(/\\/g, '/');
+    const avatarUrl = `/${filePath}`;
+
+    try {
+      const updatedProfile = await prisma.profile.update({
+        where: { id: userId },
+        data: { avatarUrl }
+      });
+
+      res.json({ avatarUrl: updatedProfile.avatarUrl });
+    } catch (error) {
+      console.error('Update avatar error', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
 };
 
 export default ProfileController;
-

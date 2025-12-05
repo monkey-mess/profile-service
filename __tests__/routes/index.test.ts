@@ -2,12 +2,10 @@ import request from 'supertest';
 import express from 'express';
 import indexRouter from '../../routes/index';
 
-// Мокаем dotenv
 jest.mock('dotenv', () => ({
   config: jest.fn(),
 }));
 
-// Мокаем Prisma клиент
 jest.mock('../../prisma/prisma-client', () => ({
   prisma: {
     profile: {
@@ -24,8 +22,6 @@ jest.mock('../../prisma/prisma-client', () => ({
 import { prisma } from '../../prisma/prisma-client';
 const mockPrisma = prisma as any;
 
-// Мокаем middleware auth
-// В реальном коде authenticateToken применяется только к определенным роутам
 jest.mock('../../middleware/auth', () => {
   return jest.fn((req, res, next) => {
     // Если есть валидный токен, устанавливаем user и пропускаем
