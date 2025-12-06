@@ -26,7 +26,7 @@ jest.mock('../../middleware/auth', () => {
   return jest.fn((req, res, next) => {
     // Если есть валидный токен, устанавливаем user и пропускаем
     if (req.headers.authorization === 'Bearer valid-token') {
-      req.user = { id: 'user-123' };
+      req.user = { userId: 'user-123' };
       next();
     } else {
       // Если токена нет, возвращаем 401 (как в реальном middleware)

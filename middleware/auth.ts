@@ -4,8 +4,18 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        userId: string;
+      };
+    }
+  }
+}
+
 interface JwtPayload {
-  id: string;
+  userId: string;
 }
 
 const authenticateToken = (req: Request, res: Response, next: NextFunction): void => {
@@ -30,10 +40,9 @@ const authenticateToken = (req: Request, res: Response, next: NextFunction): voi
     }
     
     const payload = decoded as JwtPayload;
-    req.user = { id: payload.id };
+    req.user = { userId: payload.userId };
     next();
   });
 };
 
 export default authenticateToken;
-
