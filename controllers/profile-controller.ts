@@ -60,7 +60,7 @@ const ProfileController = {
     const { userId } = req.params;
     const { username, firstName, lastName, description } = req.body as CreateProfileBody;
 
-    if (!req.user || userId !== req.user.id) {
+    if (!req.user || userId !== req.user.userId) {
       res.status(403).json({ error: 'Нет доступа' });
       return;
     }
@@ -119,7 +119,7 @@ const ProfileController = {
     const { userId } = req.params;
     const { username, firstName, lastName, description } = req.body as UpdateProfileBody;
 
-    if (!req.user || userId !== req.user.id) {
+    if (!req.user || userId !== req.user.userId) {
       res.status(403).json({ error: 'Нет доступа' });
       return;
     }
@@ -203,7 +203,7 @@ const ProfileController = {
   updateAvatar: async (req: Request, res: Response): Promise<void> => {
     const { userId } = req.params;
 
-    if (!req.user || userId !== req.user.id) {
+    if (!req.user || userId !== req.user.userId) {
       res.status(403).json({ error: 'Нет доступа' });
       return;
     }
@@ -266,7 +266,7 @@ const ProfileController = {
   // GET /profiles/me - Получить свой профиль
   getMe: async (req: Request, res: Response): Promise<void> => {
     try {
-      const userId = req.user?.id;
+      const userId = req.user?.userId;
       
       if (!userId) {
         res.status(401).json({ error: 'Не авторизован' });
@@ -293,7 +293,7 @@ const ProfileController = {
   // PATCH /profiles/me - Обновить свой профиль
   updateMe: async (req: Request, res: Response): Promise<void> => {
     try {
-      const userId = req.user?.id;
+      const userId = req.user?.userId;
       
       if (!userId) {
         res.status(401).json({ error: 'Не авторизован' });
@@ -341,7 +341,7 @@ const ProfileController = {
 
   // PATCH /profiles/me/avatar - Обновить аватар текущего пользователя
   updateMyAvatar: async (req: Request, res: Response): Promise<void> => {
-    const userId = req.user?.id;
+    const userId = req.user?.userId;
 
     if (!userId) {
       res.status(401).json({ error: 'Не авторизован' });

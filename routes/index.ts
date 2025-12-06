@@ -23,10 +23,10 @@ router.get('/profiles/search', ProfileController.searchProfiles);
 router.post('/profiles/batch', ProfileController.getProfilesBatch);
 router.get('/profiles/:userId', ProfileController.getProfile);
 router.post('/profiles/:userId', authenticateToken, ProfileController.createProfile);
-router.patch('/profiles/:userId', authenticateToken, ProfileController.updateProfile);
-router.post('/profiles/:userId/avatar', authenticateToken, uploads.single('avatar'), ProfileController.updateAvatar);
 router.get('/profiles/me', authenticateToken, ProfileController.getMe);
 router.patch('/profiles/me', authenticateToken, ProfileController.updateMe);
+router.patch('/profiles/:userId', authenticateToken, ProfileController.updateProfile);
+router.post('/profiles/:userId/avatar', authenticateToken, uploads.single('avatar'), ProfileController.updateAvatar);
 
 export default router;
 

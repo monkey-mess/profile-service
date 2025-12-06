@@ -134,7 +134,7 @@ describe('ProfileController', () => {
         firstName: 'New',
         lastName: 'User',
       };
-      mockRequest.user = { id: 'user-123' };
+      mockRequest.user = { userId: 'user-123' };
 
       mockPrisma.profile.findUnique.mockResolvedValue(null);
       mockPrisma.profile.findFirst.mockResolvedValue(null);
@@ -158,7 +158,7 @@ describe('ProfileController', () => {
     it('должен вернуть 403 если userId не совпадает с user.id', async () => {
       mockRequest.params = { userId: 'user-123' };
       mockRequest.body = { username: 'newuser' };
-      mockRequest.user = { id: 'different-user' };
+      mockRequest.user = { userId: 'different-user' };
 
       await ProfileController.createProfile(
         mockRequest as Request,
@@ -172,7 +172,7 @@ describe('ProfileController', () => {
     it('должен вернуть 400 если username не указан', async () => {
       mockRequest.params = { userId: 'user-123' };
       mockRequest.body = {};
-      mockRequest.user = { id: 'user-123' };
+      mockRequest.user = { userId: 'user-123' };
 
       await ProfileController.createProfile(
         mockRequest as Request,
@@ -186,7 +186,7 @@ describe('ProfileController', () => {
     it('должен вернуть 400 если профиль уже существует', async () => {
       mockRequest.params = { userId: 'user-123' };
       mockRequest.body = { username: 'existinguser' };
-      mockRequest.user = { id: 'user-123' };
+      mockRequest.user = { userId: 'user-123' };
 
       mockPrisma.profile.findUnique.mockResolvedValue({ id: 'user-123' });
 
@@ -202,7 +202,7 @@ describe('ProfileController', () => {
     it('должен вернуть 400 если username уже занят', async () => {
       mockRequest.params = { userId: 'user-123' };
       mockRequest.body = { username: 'takenuser' };
-      mockRequest.user = { id: 'user-123' };
+      mockRequest.user = { userId: 'user-123' };
 
       mockPrisma.profile.findUnique.mockResolvedValue(null);
       mockPrisma.profile.findFirst.mockResolvedValue({ id: 'other-user' });
@@ -237,7 +237,7 @@ describe('ProfileController', () => {
         username: 'newuser',
         firstName: 'New',
       };
-      mockRequest.user = { id: 'user-123' };
+      mockRequest.user = { userId: 'user-123' };
 
       mockPrisma.profile.findUnique.mockResolvedValue(existingProfile);
       mockPrisma.profile.findFirst.mockResolvedValue(null);
@@ -255,7 +255,7 @@ describe('ProfileController', () => {
     it('должен вернуть 403 если userId не совпадает с user.id', async () => {
       mockRequest.params = { userId: 'user-123' };
       mockRequest.body = { username: 'newuser' };
-      mockRequest.user = { id: 'different-user' };
+      mockRequest.user = { userId: 'different-user' };
 
       await ProfileController.updateProfile(
         mockRequest as Request,
@@ -269,7 +269,7 @@ describe('ProfileController', () => {
     it('должен вернуть 404 если профиль не найден', async () => {
       mockRequest.params = { userId: 'user-123' };
       mockRequest.body = { username: 'newuser' };
-      mockRequest.user = { id: 'user-123' };
+      mockRequest.user = { userId: 'user-123' };
 
       mockPrisma.profile.findUnique.mockResolvedValue(null);
 

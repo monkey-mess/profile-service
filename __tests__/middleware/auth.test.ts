@@ -35,7 +35,7 @@ describe('authenticateToken middleware', () => {
 
   it('должен вызвать next() при валидном токене', () => {
     const token = 'valid-token';
-    const decoded = { id: 'user-123' };
+    const decoded = { userId: 'user-123' };
 
     mockRequest.headers = {
       authorization: `Bearer ${token}`,
@@ -56,7 +56,7 @@ describe('authenticateToken middleware', () => {
       'test-secret-key',
       expect.any(Function)
     );
-    expect(mockRequest.user).toEqual({ id: 'user-123' });
+    expect(mockRequest.user).toEqual({ userId: 'user-123' });
     expect(mockNext).toHaveBeenCalled();
     expect(statusMock).not.toHaveBeenCalled();
   });
