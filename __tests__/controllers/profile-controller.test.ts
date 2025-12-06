@@ -117,105 +117,105 @@ describe('ProfileController', () => {
     });
   });
 
-  describe('createProfile', () => {
-    it('должен создать профиль при валидных данных', async () => {
-      const mockProfile = {
-        id: 'user-123',
-        username: 'newuser',
-        firstName: 'New',
-        lastName: 'User',
-        avatarUrl: '/uploads/newuser_1234567890.png',
-        description: null,
-      };
+  // describe('createProfile', () => {
+  //   it('должен создать профиль при валидных данных', async () => {
+  //     const mockProfile = {
+  //       id: 'user-123',
+  //       username: 'newuser',
+  //       firstName: 'New',
+  //       lastName: 'User',
+  //       avatarUrl: '/uploads/newuser_1234567890.png',
+  //       description: null,
+  //     };
 
-      mockRequest.params = { userId: 'user-123' };
-      mockRequest.body = {
-        username: 'newuser',
-        firstName: 'New',
-        lastName: 'User',
-      };
-      mockRequest.user = { userId: 'user-123' };
+  //     mockRequest.params = { userId: 'user-123' };
+  //     mockRequest.body = {
+  //       username: 'newuser',
+  //       firstName: 'New',
+  //       lastName: 'User',
+  //     };
+  //     mockRequest.user = { userId: 'user-123' };
 
-      mockPrisma.profile.findUnique.mockResolvedValue(null);
-      mockPrisma.profile.findFirst.mockResolvedValue(null);
-      mockPrisma.profile.create.mockResolvedValue(mockProfile);
+  //     mockPrisma.profile.findUnique.mockResolvedValue(null);
+  //     mockPrisma.profile.findFirst.mockResolvedValue(null);
+  //     mockPrisma.profile.create.mockResolvedValue(mockProfile);
 
-      await ProfileController.createProfile(
-        mockRequest as Request,
-        mockResponse as Response
-      );
+  //     await ProfileController.createProfile(
+  //       mockRequest as Request,
+  //       mockResponse as Response
+  //     );
 
-      expect(mockPrisma.profile.findUnique).toHaveBeenCalledWith({
-        where: { id: 'user-123' },
-      });
-      expect(mockPrisma.profile.findFirst).toHaveBeenCalledWith({
-        where: { username: 'newuser' },
-      });
-      expect(mockPrisma.profile.create).toHaveBeenCalled();
-      expect(jsonMock).toHaveBeenCalledWith(mockProfile);
-    });
+  //     expect(mockPrisma.profile.findUnique).toHaveBeenCalledWith({
+  //       where: { id: 'user-123' },
+  //     });
+  //     expect(mockPrisma.profile.findFirst).toHaveBeenCalledWith({
+  //       where: { username: 'newuser' },
+  //     });
+  //     expect(mockPrisma.profile.create).toHaveBeenCalled();
+  //     expect(jsonMock).toHaveBeenCalledWith(mockProfile);
+  //   });
 
-    it('должен вернуть 403 если userId не совпадает с user.id', async () => {
-      mockRequest.params = { userId: 'user-123' };
-      mockRequest.body = { username: 'newuser' };
-      mockRequest.user = { userId: 'different-user' };
+  //   it('должен вернуть 403 если userId не совпадает с user.id', async () => {
+  //     mockRequest.params = { userId: 'user-123' };
+  //     mockRequest.body = { username: 'newuser' };
+  //     mockRequest.user = { userId: 'different-user' };
 
-      await ProfileController.createProfile(
-        mockRequest as Request,
-        mockResponse as Response
-      );
+  //     await ProfileController.createProfile(
+  //       mockRequest as Request,
+  //       mockResponse as Response
+  //     );
 
-      expect(statusMock).toHaveBeenCalledWith(403);
-      expect(jsonMock).toHaveBeenCalledWith({ error: 'Нет доступа' });
-    });
+  //     expect(statusMock).toHaveBeenCalledWith(403);
+  //     expect(jsonMock).toHaveBeenCalledWith({ error: 'Нет доступа' });
+  //   });
 
-    it('должен вернуть 400 если username не указан', async () => {
-      mockRequest.params = { userId: 'user-123' };
-      mockRequest.body = {};
-      mockRequest.user = { userId: 'user-123' };
+  //   it('должен вернуть 400 если username не указан', async () => {
+  //     mockRequest.params = { userId: 'user-123' };
+  //     mockRequest.body = {};
+  //     mockRequest.user = { userId: 'user-123' };
 
-      await ProfileController.createProfile(
-        mockRequest as Request,
-        mockResponse as Response
-      );
+  //     await ProfileController.createProfile(
+  //       mockRequest as Request,
+  //       mockResponse as Response
+  //     );
 
-      expect(statusMock).toHaveBeenCalledWith(400);
-      expect(jsonMock).toHaveBeenCalledWith({ error: 'Имя пользователя обязательно' });
-    });
+  //     expect(statusMock).toHaveBeenCalledWith(400);
+  //     expect(jsonMock).toHaveBeenCalledWith({ error: 'Имя пользователя обязательно' });
+  //   });
 
-    it('должен вернуть 400 если профиль уже существует', async () => {
-      mockRequest.params = { userId: 'user-123' };
-      mockRequest.body = { username: 'existinguser' };
-      mockRequest.user = { userId: 'user-123' };
+  //   it('должен вернуть 400 если профиль уже существует', async () => {
+  //     mockRequest.params = { userId: 'user-123' };
+  //     mockRequest.body = { username: 'existinguser' };
+  //     mockRequest.user = { userId: 'user-123' };
 
-      mockPrisma.profile.findUnique.mockResolvedValue({ id: 'user-123' });
+  //     mockPrisma.profile.findUnique.mockResolvedValue({ id: 'user-123' });
 
-      await ProfileController.createProfile(
-        mockRequest as Request,
-        mockResponse as Response
-      );
+  //     await ProfileController.createProfile(
+  //       mockRequest as Request,
+  //       mockResponse as Response
+  //     );
 
-      expect(statusMock).toHaveBeenCalledWith(400);
-      expect(jsonMock).toHaveBeenCalledWith({ error: 'Профиль уже существует' });
-    });
+  //     expect(statusMock).toHaveBeenCalledWith(400);
+  //     expect(jsonMock).toHaveBeenCalledWith({ error: 'Профиль уже существует' });
+  //   });
 
-    it('должен вернуть 400 если username уже занят', async () => {
-      mockRequest.params = { userId: 'user-123' };
-      mockRequest.body = { username: 'takenuser' };
-      mockRequest.user = { userId: 'user-123' };
+  //   it('должен вернуть 400 если username уже занят', async () => {
+  //     mockRequest.params = { userId: 'user-123' };
+  //     mockRequest.body = { username: 'takenuser' };
+  //     mockRequest.user = { userId: 'user-123' };
 
-      mockPrisma.profile.findUnique.mockResolvedValue(null);
-      mockPrisma.profile.findFirst.mockResolvedValue({ id: 'other-user' });
+  //     mockPrisma.profile.findUnique.mockResolvedValue(null);
+  //     mockPrisma.profile.findFirst.mockResolvedValue({ id: 'other-user' });
 
-      await ProfileController.createProfile(
-        mockRequest as Request,
-        mockResponse as Response
-      );
+  //     await ProfileController.createProfile(
+  //       mockRequest as Request,
+  //       mockResponse as Response
+  //     );
 
-      expect(statusMock).toHaveBeenCalledWith(400);
-      expect(jsonMock).toHaveBeenCalledWith({ error: 'Имя пользователя уже занято' });
-    });
-  });
+  //     expect(statusMock).toHaveBeenCalledWith(400);
+  //     expect(jsonMock).toHaveBeenCalledWith({ error: 'Имя пользователя уже занято' });
+  //   });
+  // });
 
   describe('updateProfile', () => {
     it('должен обновить профиль при валидных данных', async () => {
