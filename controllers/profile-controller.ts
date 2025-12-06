@@ -7,13 +7,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-interface CreateProfileBody {
-  username: string;
-  firstName?: string;
-  lastName?: string;
-  description?: string;
-}
-
 interface UpdateProfileBody {
   username?: string;
   firstName?: string;
@@ -55,13 +48,13 @@ const ProfileController = {
     }
   },
 
-  // POST /profiles/{userId} - создание профиля с дефолтной аватаркой
-  createProfile: async (req: Request, res: Response): Promise<void> => {
-    const { userId } = req.params;
-    const { username, firstName, lastName, description } = req.body as CreateProfileBody;
+  // POST /profiles/me - создание профиля с дефолтной аватаркой (только для авторизованного пользователя)
+  createMe: async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user?.userId;
+    const { username, firstName, lastName, description } = req.body as UpdateProfileBody;
 
-    if (!req.user || userId !== req.user.userId) {
-      res.status(403).json({ error: 'Нет доступа' });
+    if (!userId) {
+      res.status(401).json({ error: 'Не авторизован' });
       return;
     }
 
@@ -107,9 +100,9 @@ const ProfileController = {
         }
       });
 
-      res.json(profile);
+      res.status(201).json(profile);
     } catch (error) {
-      console.error('Error in createProfile', error);
+      console.error('Error in createMe', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
