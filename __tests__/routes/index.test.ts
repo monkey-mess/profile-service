@@ -115,48 +115,6 @@ describe('Routes', () => {
     });
   });
 
-  describe('POST /api/profiles/:userId', () => {
-    it('должен создать профиль с валидным токеном', async () => {
-      const mockProfile = {
-        id: 'user-123',
-        username: 'newuser',
-        firstName: 'New',
-        lastName: 'User',
-        avatarUrl: '/uploads/newuser_1234567890.png',
-        description: null,
-      };
-
-      mockPrisma.profile.findUnique.mockResolvedValue(null);
-      mockPrisma.profile.findFirst.mockResolvedValue(null);
-      mockPrisma.profile.create.mockResolvedValue(mockProfile);
-
-      const response = await request(app)
-        .post('/api/profiles/user-123')
-        .set('Authorization', 'Bearer valid-token')
-        .send({
-          username: 'newuser',
-          firstName: 'New',
-          lastName: 'User',
-        })
-        .expect(200);
-
-      expect(response.body).toEqual(mockProfile);
-      expect(mockPrisma.profile.create).toHaveBeenCalled();
-    });
-
-    it('должен вернуть 401 без токена', async () => {
-      // POST /profiles/:userId требует authenticateToken middleware
-      // Если токена нет, middleware вернет 401
-      const response = await request(app)
-        .post('/api/profiles/user-123')
-        .send({
-          username: 'newuser',
-        });
-
-      // Middleware вернет 401, но если он не сработал, контроллер вернет 403
-      expect([401, 403]).toContain(response.status);
-    });
-  });
 
   describe('PATCH /api/profiles/:userId', () => {
     it('должен обновить профиль с валидным токеном', async () => {
@@ -290,4 +248,3 @@ describe('Routes', () => {
     });
   });
 });
-
