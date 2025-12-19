@@ -23,8 +23,10 @@
     "jade": "~1.11.0",
     "jdenticon": "^3.3.0",
     "jsonwebtoken": "^9.0.2",
+    "minio": "^8.0.6",
     "morgan": "~1.9.1",
-    "multer": "^2.0.2"
+    "multer": "^2.0.2",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

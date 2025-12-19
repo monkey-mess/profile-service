@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import { prisma } from '../prisma/prisma-client';
-import path from 'path';
-import fs from 'fs';
 import Jdenticon from 'jdenticon';
 import dotenv from 'dotenv';
+import { v4 as uuidv4 } from 'uuid';
+import * as Minio from 'minio';
 
 dotenv.config();
 
@@ -18,11 +18,60 @@ interface GetProfilesBatchBody {
   userIds: string[];
 }
 
-// Функция для создания папки uploads если её нет
-function ensureUploadsDir(): void {
-  const uploadDir = path.join(__dirname, '../uploads');
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
+// Конфигурация MinIO из .env
+const minioConfig = {
+  endpoint: process.env.MINIO_ENDPOINT || 'localhost:9000',
+  bucketName: process.env.MINIO_BUCKET_NAME || 'public-bucket',
+  accessKey: process.env.MINIO_WRITE_USER || 'write-user',
+  secretKey: process.env.MINIO_WRITE_PASSWORD || 'write123',
+  secure: false,
+};
+
+// Инициализируем клиент MinIO
+const minioClient = new Minio.Client({
+  endPoint: minioConfig.endpoint.split(':')[0],
+  port: parseInt(minioConfig.endpoint.split(':')[1]) || 9000,
+  useSSL: minioConfig.secure,
+  accessKey: minioConfig.accessKey,
+  secretKey: minioConfig.secretKey,
+});
+
+// Функция для загрузки файла в MinIO
+async function uploadToMinIO(
+  buffer: Buffer,
+  fileName: string,
+  contentType: string
+): Promise<string> {
+  try {
+    const fileExtension = fileName.split('.').pop();
+    const uniqueFileName = `${uuidv4()}.${fileExtension}`;
+    const objectName = `avatars/${uniqueFileName}`;
+    
+    await minioClient.putObject(
+      minioConfig.bucketName,
+      objectName,
+      buffer,
+      buffer.length,
+      { 'Content-Type': contentType }
+    );
+    
+    const publicUrl = `http://${minioConfig.endpoint}/${minioConfig.bucketName}/${objectName}`;
+    return publicUrl;
+  } catch (error) {
+    console.error('Error uploading to MinIO:', error);
+    throw new Error('Failed to upload file');
+  }
+}
+
+// Функция для удаления файла из MinIO
+async function deleteFromMinIO(url: string): Promise<void> {
+  try {
+    const urlParts = url.split('/');
+    const objectName = urlParts.slice(3).join('/');
+    
+    await minioClient.removeObject(minioConfig.bucketName, objectName);
+  } catch (error) {
+    console.error('Error deleting from MinIO:', error);
   }
 }
 
@@ -48,7 +97,7 @@ const ProfileController = {
     }
   },
 
-  // POST /profiles/me - создание профиля с дефолтной аватаркой (только для авторизованного пользователя)
+  // POST /profiles/me - создание профиля с дефолтной аватаркой в MinIO
   createMe: async (req: Request, res: Response): Promise<void> => {
     const userId = req.user?.userId;
     const { username, firstName, lastName, description } = req.body as UpdateProfileBody;
@@ -82,12 +131,15 @@ const ProfileController = {
         return;
       }
 
-      ensureUploadsDir();
-      const png = Jdenticon.toPng(username, 200);
+      // Генерируем дефолтную аватарку и загружаем в MinIO
+      const pngBuffer = Buffer.from(Jdenticon.toPng(username, 200));
       const avatarName = `${username}_${Date.now()}.png`;
-      const avatarPath = path.join(__dirname, '../uploads', avatarName);
-      fs.writeFileSync(avatarPath, png);
-      const avatarUrl = `/uploads/${avatarName}`;
+      
+      const avatarUrl = await uploadToMinIO(
+        pngBuffer,
+        avatarName,
+        'image/png'
+      );
 
       const profile = await prisma.profile.create({
         data: {
@@ -155,6 +207,52 @@ const ProfileController = {
     }
   },
 
+  // POST /profiles/{userId}/avatar - обновление аватарки через MinIO
+  updateAvatar: async (req: Request, res: Response): Promise<void> => {
+    const { userId } = req.params;
+
+    if (!req.user || userId !== req.user.userId) {
+      res.status(403).json({ error: 'Нет доступа' });
+      return;
+    }
+
+    if (!req.file) {
+      res.status(400).json({ error: 'Файл не загружен' });
+      return;
+    }
+
+    try {
+      const existingProfile = await prisma.profile.findUnique({
+        where: { id: userId }
+      });
+
+      if (!existingProfile) {
+        res.status(404).json({ error: 'Профиль не найден' });
+        return;
+      }
+
+      const avatarUrl = await uploadToMinIO(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype
+      );
+
+      if (existingProfile.avatarUrl) {
+        await deleteFromMinIO(existingProfile.avatarUrl);
+      }
+
+      const updatedProfile = await prisma.profile.update({
+        where: { id: userId },
+        data: { avatarUrl }
+      });
+
+      res.json({ avatarUrl: updatedProfile.avatarUrl });
+    } catch (error) {
+      console.error('Update avatar error', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
   // GET /profiles/search?query=Fek&limit=10
   searchProfiles: async (req: Request, res: Response): Promise<void> => {
     const { query, limit = '10' } = req.query;
@@ -192,38 +290,6 @@ const ProfileController = {
     }
   },
 
-  // POST /profiles/{userId}/avatar
-  updateAvatar: async (req: Request, res: Response): Promise<void> => {
-    const { userId } = req.params;
-
-    if (!req.user || userId !== req.user.userId) {
-      res.status(403).json({ error: 'Нет доступа' });
-      return;
-    }
-
-    if (!req.file) {
-      res.status(400).json({ error: 'Файл не загружен' });
-      return;
-    }
-
-    ensureUploadsDir();
-    let filePath: string = req.file.path;
-    filePath = filePath.replace(/\\/g, '/');
-    const avatarUrl = `/${filePath}`;
-
-    try {
-      const updatedProfile = await prisma.profile.update({
-        where: { id: userId },
-        data: { avatarUrl }
-      });
-
-      res.json({ avatarUrl: updatedProfile.avatarUrl });
-    } catch (error) {
-      console.error('Update avatar error', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  },
-
   // POST /profiles/batch
   getProfilesBatch: async (req: Request, res: Response): Promise<void> => {
     const { userIds } = req.body as GetProfilesBatchBody;
@@ -256,7 +322,7 @@ const ProfileController = {
     }
   },
 
-  // GET /profiles/me - Получить свой профиль
+  // GET /profiles/me
   getMe: async (req: Request, res: Response): Promise<void> => {
     try {
       const userId = req.user?.userId;
@@ -283,7 +349,7 @@ const ProfileController = {
     }
   },
 
-  // PATCH /profiles/me - Обновить свой профиль
+  // PATCH /profiles/me
   updateMe: async (req: Request, res: Response): Promise<void> => {
     try {
       const userId = req.user?.userId;
@@ -332,7 +398,7 @@ const ProfileController = {
     }
   },
 
-  // PATCH /profiles/me/avatar - Обновить аватар текущего пользователя
+  // PATCH /profiles/me/avatar
   updateMyAvatar: async (req: Request, res: Response): Promise<void> => {
     const userId = req.user?.userId;
 
@@ -346,12 +412,26 @@ const ProfileController = {
       return;
     }
 
-    ensureUploadsDir();
-    let filePath: string = req.file.path;
-    filePath = filePath.replace(/\\/g, '/');
-    const avatarUrl = `/${filePath}`;
-
     try {
+      const existingProfile = await prisma.profile.findUnique({
+        where: { id: userId }
+      });
+
+      if (!existingProfile) {
+        res.status(404).json({ error: 'Профиль не найден' });
+        return;
+      }
+
+      const avatarUrl = await uploadToMinIO(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype
+      );
+
+      if (existingProfile.avatarUrl) {
+        await deleteFromMinIO(existingProfile.avatarUrl);
+      }
+
       const updatedProfile = await prisma.profile.update({
         where: { id: userId },
         data: { avatarUrl }
