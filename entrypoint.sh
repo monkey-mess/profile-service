@@ -12,7 +12,7 @@ done
 echo "PostgreSQL is ready!"
 
 echo "Running database migrations..."
-npx prisma migrate deploy
+npx prisma migrate dev --name init
 
 echo "Starting the application..."
 exec npm start
